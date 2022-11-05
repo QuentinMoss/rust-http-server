@@ -1,9 +1,10 @@
-use super::method::Method;
+use super::method::{Method, MethodError};
 use std::convert::TryFrom;
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
 use std::str;
 use std::str::Utf8Error;
+
 
 pub struct Request {
     path: String,
@@ -11,9 +12,12 @@ pub struct Request {
     method: Method,
 }
 
+
 impl TryFrom<&[u8]> for Request {
     // Set alias Error for ParseError
     type Error = ParseError;
+
+    // Example Request: GET /search?name=abc&sort=1 HTTP/1.1\r\n...HEADERS...
 
     // try_from will return Self::Error - Alias for ParseError
     fn try_from(buf: &[u8]) -> Result<Self, Self::Error> {
@@ -37,7 +41,7 @@ impl TryFrom<&[u8]> for Request {
          * We can still make this cleaner by converting the from_utf8 error using 'From' trait, and
          * map it to ParseError::InvalidEncoding
          *
-         * Because we know that every time we get a Utf8Error, a InvalidEnding error is good, we can override the default errors
+         * Because we know that every time we get a Utf8Error, an InvalidEnding error is good, we can override the default errors
          * using the method below
          *
          * Cleanest Approach with '?', from_utf8 returns Utf8Error, we override with 'From' and
@@ -45,6 +49,27 @@ impl TryFrom<&[u8]> for Request {
          */
 
         let request = str::from_utf8(buf)?;
+        
+        // Example Request: GET /search?name=abc&sort=1 HTTP/1.1\r\n...HEADERS...
+        /*
+         * ok_or() transforms an option into a result
+         *
+         * get_next_word() returns an option
+         *
+         * if the return Option is == Some(), it will be converted into an Ok (enum) variant of the
+         * result.
+         *
+         * if None, we will return our defined error, ParseError::InvalidRequest
+         */
+        let (method, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
+        let (path, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
+        let (protocol, _) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
+        
+        if protocol != "HTTP/1.1" {
+            return Err(ParseError::InvalidProtocol);
+        }
+
+        let method: Method = method.parse()?;
 
         unimplemented!()
     }
@@ -56,7 +81,7 @@ fn get_next_word(request: &str) -> Option<(&str, &str)> {
     // enumerate() gives (i, val), index and value of index.
     for (i, c) in request.chars().enumerate() {
         // If c is = to space, we want to return tuple with two string slices
-        if c == ' ' {
+        if c == ' ' || c == '\r' {
             // arg1: Get all of characters up until index of space. All of characters before space
             // arg2: Inclusive, so we get index of space +1 to include everything after the space
             return Some((&request[..i], &request[i + 1..]));
@@ -85,6 +110,12 @@ impl ParseError {
 }
 
 // Every time we get Utf8Error, let's return our defined InvalidEncoding error
+impl From<MethodError> for ParseError {
+    fn from(_: MethodError) -> Self {
+        Self::InvalidMethod    
+    }
+}
+
 impl From<Utf8Error> for ParseError {
     fn from(_: Utf8Error) -> Self {
         Self::InvalidEncoding
