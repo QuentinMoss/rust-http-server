@@ -1,9 +1,9 @@
-use std::str::Utf8Error;
 use super::method::Method;
 use std::convert::TryFrom;
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
 use std::str;
+use std::str::Utf8Error;
 
 pub struct Request {
     path: String,
@@ -27,10 +27,10 @@ impl TryFrom<&[u8]> for Request {
          *
          * A better method using '?'
          * This will look at the Result, if the Result is Ok, it will return
-         * If the Result is Err, it will return the error from our function: 
+         * If the Result is Err, it will return the error from our function:
          *
          * The '?' will try to convert the error type it receives, if it does not match the error
-         * type the function is expected to return. 'from_utf8' returns its own Utf8Error 
+         * type the function is expected to return. 'from_utf8' returns its own Utf8Error
          *
          * Example: str::from_utf8(buf).or(Err(ParseError::InvalidEncoding))?;
          *
@@ -40,17 +40,31 @@ impl TryFrom<&[u8]> for Request {
          * Because we know that every time we get a Utf8Error, a InvalidEnding error is good, we can override the default errors
          * using the method below
          *
+         * Cleanest Approach with '?', from_utf8 returns Utf8Error, we override with 'From' and
+         * return InvalidEncoding
          */
-
-
-        // Cleanest Approach with '?', from_utf8 returns Utf8Error, we override with 'From' and
-        // return InvalidEncoding
 
         let request = str::from_utf8(buf)?;
 
         unimplemented!()
+    }
+}
+
+// Option<> will contain the next element of the string or return None if iterator has no more
+// elements
+fn get_next_word(request: &str) -> Option<(&str, &str)> {
+    // enumerate() gives (i, val), index and value of index.
+    for (i, c) in request.chars().enumerate() {
+        // If c is = to space, we want to return tuple with two string slices
+        if c == ' ' {
+            // arg1: Get all of characters up until index of space. All of characters before space
+            // arg2: Inclusive, so we get index of space +1 to include everything after the space
+            return Some((&request[..i], &request[i + 1..]));
         }
     }
+
+    None
+}
 
 pub enum ParseError {
     InvalidRequest,
