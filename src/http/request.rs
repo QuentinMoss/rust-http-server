@@ -5,13 +5,11 @@ use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
 use std::str;
 use std::str::Utf8Error;
 
-
 pub struct Request {
     path: String,
     query_string: Option<String>,
     method: Method,
 }
-
 
 impl TryFrom<&[u8]> for Request {
     // Set alias Error for ParseError
@@ -49,7 +47,7 @@ impl TryFrom<&[u8]> for Request {
          */
 
         let request = str::from_utf8(buf)?;
-        
+
         // Example Request: GET /search?name=abc&sort=1 HTTP/1.1\r\n...HEADERS...
         /*
          * ok_or() transforms an option into a result
@@ -64,7 +62,7 @@ impl TryFrom<&[u8]> for Request {
         let (method, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
         let (path, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
         let (protocol, _) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
-        
+
         if protocol != "HTTP/1.1" {
             return Err(ParseError::InvalidProtocol);
         }
@@ -112,7 +110,7 @@ impl ParseError {
 // Every time we get Utf8Error, let's return our defined InvalidEncoding error
 impl From<MethodError> for ParseError {
     fn from(_: MethodError) -> Self {
-        Self::InvalidMethod    
+        Self::InvalidMethod
     }
 }
 
