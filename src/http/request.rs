@@ -5,20 +5,22 @@ use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
 use std::str;
 use std::str::Utf8Error;
 
-pub struct Request {
-    path: String,
-    query_string: Option<String>,
+// Define lifetime for our buffer 
+pub struct Request<'buf> {
+    path: &'buf str,
+    query_string: Option<&'buf str>,
     method: Method,
 }
 
-impl TryFrom<&[u8]> for Request {
+// TODO: WTF LIFETIMES 
+impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> { 
     // Set alias Error for ParseError
     type Error = ParseError;
 
     // Example Request: GET /search?name=abc&sort=1 HTTP/1.1\r\n...HEADERS...
 
     // try_from will return Self::Error - Alias for ParseError
-    fn try_from(buf: &[u8]) -> Result<Self, Self::Error> {
+    fn try_from(buf: &'buf [u8]) -> Result<Request<'buf>, Self::Error> {
         /*
          * A verbose and less ideal approach. Example:
          *
@@ -60,16 +62,55 @@ impl TryFrom<&[u8]> for Request {
          * if None, we will return our defined error, ParseError::InvalidRequest
          */
         let (method, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
-        let (path, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
+        let (mut path, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
         let (protocol, _) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
 
         if protocol != "HTTP/1.1" {
             return Err(ParseError::InvalidProtocol);
         }
 
-        let method: Method = method.parse()?;
 
-        unimplemented!()
+        /*
+         * Examples of more verbose, solutions followed by cleanest
+         *
+         * match path.find('?') {
+         *     some(i) => {
+         *         // pad with +1 so ? isn't in query string
+         *         query_string = some(&path[i + 1..]);
+         *         // assign everything before '?' to path
+         *         path = &path[..i];
+         *     }
+         *     none => {}
+         * }
+
+         * let q = path.find('?');
+         * if q.is_some() {
+         *     let i = q.unwrap();
+         *     // pad with +1 so ? isn't in query string
+         *     query_string = some(&path[i + 1..]);
+         *     // assign everything before '?' to path
+         *     path = &path[..i];
+         * }
+         *
+         */
+
+        let method: Method = method.parse()?;
+        let mut query_string = None;
+
+        if let Some(i) = path.find('?') {
+            // Pad with +1 so ? isn't in query string
+            query_string = Some(&path[i + 1..]);
+
+            // Assign everything before '?' to path
+            path = &path[..i];
+        }
+        
+
+        Ok(Self {
+            path,
+            query_string,
+            method,
+        })
     }
 }
 
