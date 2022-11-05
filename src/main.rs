@@ -1,8 +1,8 @@
-mod server;
 mod http;
+mod server;
 
-use http::request::Request;
 use http::method::Method;
+use http::request::Request;
 use server::Server;
 fn main() {
     // Because we're using a mod, we must prepend the mod name to reference the method

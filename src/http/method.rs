@@ -17,23 +17,20 @@ impl FromStr for Method {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-          "GET" => Ok(Self::GET),
-          "DELETE" => Ok(Self::DELETE),
-          "POST" => Ok(Self::POST),
-          "PUT" => Ok(Self::PUT),
-          "HEAD" => Ok(Self::HEAD),
-          "CONNECT" => Ok(Self::CONNECT),
-          "OPTIONS" => Ok(Self::OPTIONS),
-          "TRACE" => Ok(Self::TRACE),
-          "PATCH" => Ok(Self::PATCH), 
-          // Default case
-          _ => Err(MethodError),
+            "GET" => Ok(Self::GET),
+            "DELETE" => Ok(Self::DELETE),
+            "POST" => Ok(Self::POST),
+            "PUT" => Ok(Self::PUT),
+            "HEAD" => Ok(Self::HEAD),
+            "CONNECT" => Ok(Self::CONNECT),
+            "OPTIONS" => Ok(Self::OPTIONS),
+            "TRACE" => Ok(Self::TRACE),
+            "PATCH" => Ok(Self::PATCH),
+            // Default case
+            _ => Err(MethodError),
         }
     }
 }
 
 // Define MethodError
 pub struct MethodError;
-
-
-

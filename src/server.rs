@@ -1,7 +1,7 @@
-use std::io::Read;
+use crate::http::Request;
 use std::convert::TryFrom;
 use std::convert::TryInto;
-use crate::http::Request;
+use std::io::Read;
 use std::net::TcpListener;
 
 pub struct Server {
@@ -27,19 +27,17 @@ impl Server {
                     // Create buffer for io::read, 1024 in size. Takes u8, so just over 1kb
                     let mut buffer = [0; 1024];
                     match stream.read(&mut buffer) {
-                        Ok(_) => { 
+                        Ok(_) => {
                             println!("Request: {}", String::from_utf8_lossy(&buffer));
 
                             match Request::try_from(&buffer[..]) {
-                                Ok(request) => {},
+                                Ok(request) => {}
                                 Err(e) => println!("failed to parse request {}", e),
                             }
                             let res: &Result<Request, _> = &buffer[..].try_into();
+                        }
 
-
-                        },
-
-                        Err(e) => println!("Error: {}", e)
+                        Err(e) => println!("Error: {}", e),
                     }
                 }
                 Err(e) => println!("Err: {}", e),
