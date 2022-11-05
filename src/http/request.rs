@@ -5,15 +5,15 @@ use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
 use std::str;
 use std::str::Utf8Error;
 
-// Define lifetime for our buffer 
+// Define lifetime for our buffer
 pub struct Request<'buf> {
     path: &'buf str,
     query_string: Option<&'buf str>,
     method: Method,
 }
 
-// TODO: WTF LIFETIMES 
-impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> { 
+// TODO: WTF LIFETIMES
+impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> {
     // Set alias Error for ParseError
     type Error = ParseError;
 
@@ -69,30 +69,29 @@ impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> {
             return Err(ParseError::InvalidProtocol);
         }
 
-
         /*
-         * Examples of more verbose, solutions followed by cleanest
-         *
-         * match path.find('?') {
-         *     some(i) => {
-         *         // pad with +1 so ? isn't in query string
-         *         query_string = some(&path[i + 1..]);
-         *         // assign everything before '?' to path
-         *         path = &path[..i];
-         *     }
-         *     none => {}
-         * }
+        * Examples of more verbose, solutions followed by cleanest
+        *
+        * match path.find('?') {
+        *     some(i) => {
+        *         // pad with +1 so ? isn't in query string
+        *         query_string = some(&path[i + 1..]);
+        *         // assign everything before '?' to path
+        *         path = &path[..i];
+        *     }
+        *     none => {}
+        * }
 
-         * let q = path.find('?');
-         * if q.is_some() {
-         *     let i = q.unwrap();
-         *     // pad with +1 so ? isn't in query string
-         *     query_string = some(&path[i + 1..]);
-         *     // assign everything before '?' to path
-         *     path = &path[..i];
-         * }
-         *
-         */
+        * let q = path.find('?');
+        * if q.is_some() {
+        *     let i = q.unwrap();
+        *     // pad with +1 so ? isn't in query string
+        *     query_string = some(&path[i + 1..]);
+        *     // assign everything before '?' to path
+        *     path = &path[..i];
+        * }
+        *
+        */
 
         let method: Method = method.parse()?;
         let mut query_string = None;
@@ -104,7 +103,6 @@ impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> {
             // Assign everything before '?' to path
             path = &path[..i];
         }
-        
 
         Ok(Self {
             path,
