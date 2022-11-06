@@ -6,6 +6,7 @@ use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
 use std::str;
 use std::str::Utf8Error;
 
+#[derive(Debug)]
 // Define lifetime for our buffer
 pub struct Request<'buf> {
     path: &'buf str,
@@ -162,8 +163,7 @@ impl From<Utf8Error> for ParseError {
 
 impl Debug for ParseError {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
-        write!(f, "{}", self.message());
-        unimplemented!()
+        write!(f, "{}", self.message())
     }
 }
 

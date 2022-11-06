@@ -26,12 +26,15 @@ impl Server {
                 Ok((mut stream, _)) => {
                     // Create buffer for io::read, 1024 in size. Takes u8, so just over 1kb
                     let mut buffer = [0; 1024];
+
                     match stream.read(&mut buffer) {
                         Ok(_) => {
                             println!("Request: {}", String::from_utf8_lossy(&buffer));
 
                             match Request::try_from(&buffer[..]) {
-                                Ok(request) => {}
+                                Ok(request) => {
+                                    dbg!(request);
+                                }
                                 Err(e) => println!("failed to parse request {}", e),
                             }
                             let res: &Result<Request, _> = &buffer[..].try_into();
