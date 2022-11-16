@@ -1,4 +1,4 @@
-use crate::http::{Request, Response, StatusCode};
+use crate::http::{Request, Response, StatusCode, ParseError};
 use std::convert::TryFrom;
 use std::convert::TryInto;
 use std::io::{Read, Write};
@@ -6,6 +6,17 @@ use std::net::TcpListener;
 
 pub struct Server {
     addr: String,
+}
+
+pub trait Handler {
+    fn handle_request(&mut self, request: &Request) -> Response;
+
+    // Define a default method. This can be overriden
+    fn handle_bad_request(&mut self, e: &ParseError) -> Response {
+        println!("Failed to parse request {}", e);
+        Response::new(StatusCode::BadRequest, None)
+    }
+
 }
 
 impl Server {
@@ -18,7 +29,7 @@ impl Server {
     // Struct will be deallocated when run exits.
     // If you do not want to deallocate the struct after exit, use reference
 
-    pub fn run(self) -> ! {
+    pub fn run(self, mut handler: impl Handler) -> ! {
         let listener = TcpListener::bind(&self.addr).unwrap();
 
         println!("Listening on {}", &self.addr);
@@ -35,18 +46,12 @@ impl Server {
 
                             let response = match Request::try_from(&buffer[..]) {
                                 Ok(request) => {
-                                    dbg!(request);
-                                    // Response::new, takes status_code and body, for 404 we don't
-                                    // return body. Pass None
-                                    Response::new(
-                                        StatusCode::Ok,
-                                        Some("<h1>testing</h1>".to_string()),
-                                    )
+                                    dbg!(&request);
+                                    handler.handle_request(&request)
                                 }
 
                                 Err(e) => {
-                                    println!("failed to parse request {}", e);
-                                    Response::new(StatusCode::BadRequest, None)
+                                    handler.handle_bad_request(&e)
                                 }
                             };
                             if let Err(e) = response.send(&mut stream) {
