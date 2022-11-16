@@ -16,7 +16,8 @@ impl Response {
     }
     // Instead of writing our response to the formatter, let's write to the stream so we don't
     // constantly have to make heap allocations
-    pub fn send(&self, stream: &mut TcpStream) -> IoResult<()> {
+    // dyn = dynamic == dynamic dispatch
+    pub fn send(&self, stream: &mut impl Write) -> IoResult<()> {
         // 'body' is an option, so we must match
         let body = match &self.body {
             Some(b) => b,
