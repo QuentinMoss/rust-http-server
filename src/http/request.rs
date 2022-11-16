@@ -14,7 +14,6 @@ pub struct Request<'buf> {
     method: Method,
 }
 
-// TODO: WTF LIFETIMES
 impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> {
     // Set alias Error for ParseError
     type Error = ParseError;
@@ -126,7 +125,6 @@ fn get_next_word(request: &str) -> Option<(&str, &str)> {
             return Some((&request[..i], &request[i + 1..]));
         }
     }
-
     None
 }
 

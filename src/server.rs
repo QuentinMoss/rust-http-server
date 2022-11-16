@@ -1,7 +1,7 @@
-use crate::http::Request;
+use crate::http::{Request, Response, StatusCode};
 use std::convert::TryFrom;
 use std::convert::TryInto;
-use std::io::Read;
+use std::io::{Read, Write};
 use std::net::TcpListener;
 
 pub struct Server {
@@ -13,9 +13,11 @@ impl Server {
     pub fn new(addr: String) -> Self {
         Self { addr: addr }
     }
+
     // 'self' follows same ownership as normal variables. Takes ownership of the entire struct.
     // Struct will be deallocated when run exits.
     // If you do not want to deallocate the struct after exit, use reference
+
     pub fn run(self) -> ! {
         let listener = TcpListener::bind(&self.addr).unwrap();
 
@@ -31,19 +33,31 @@ impl Server {
                         Ok(_) => {
                             println!("Request: {}", String::from_utf8_lossy(&buffer));
 
-                            match Request::try_from(&buffer[..]) {
+                            let response = match Request::try_from(&buffer[..]) {
                                 Ok(request) => {
                                     dbg!(request);
+                                    // Response::new, takes status_code and body, for 404 we don't
+                                    // return body. Pass None
+                                    Response::new(
+                                        StatusCode::Ok,
+                                        Some("<h1>testing</h1>".to_string()),
+                                    )
                                 }
-                                Err(e) => println!("failed to parse request {}", e),
-                            }
-                            let res: &Result<Request, _> = &buffer[..].try_into();
-                        }
 
-                        Err(e) => println!("Error: {}", e),
+                                Err(e) => {
+                                    println!("failed to parse request {}", e);
+                                    Response::new(StatusCode::BadRequest, None)
+                                }
+                            };
+                            if let Err(e) = response.send(&mut stream) {
+                                println!("Failed to send resposne {}", e);
+                            }
+                        }
+                        Err(e) => println!("Failed to read from connection {}", e),
                     }
                 }
-                Err(e) => println!("Err: {}", e),
+
+                Err(e) => println!("Failed to accept connection: {}", e),
             }
         }
     }
